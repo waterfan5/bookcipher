@@ -1,284 +1,66 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html><head>
-   <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Book Cipher</title>
-   <!-- Load an icon library to show a hamburger menu (bars) on small screens -->
-   <link rel="icon" href="..\shared\favicon.ico" />
+   <link rel="icon" href="../Shared/favicon.ico" />
+
+   <!-- Shared theme + fonts -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Caveat+Brush&family=Inter:wght@400;500;600&display=swap">
+   <link rel="stylesheet" href="../Shared/theme.css" />
+   <link rel="stylesheet" href="bookcipher.css" />
+
+   <!-- Hamburger nav + icon font -->
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-   <link rel="stylesheet" href="../shared/hamburgermenu.css" />
-   <script type="text/javascript" src="../shared/hamburgermenu.js"></script>
+   <link rel="stylesheet" href="../Shared/hamburgermenu.css" />
+   <script type="text/javascript" src="../Shared/hamburgermenu.js"></script>
+
+   <!-- Google Analytics -->
    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1T547128ND"></script>
 
+   <!-- Core book-cipher logic (shared with test.html) -->
+   <script type="text/javascript" src="bookcipher-logic.js"></script>
+
    <script>
-      var g_nFindDelta = 0;
+      // ── DOM glue: read inputs, call the pure logic, write outputs ──
 
-      String.prototype.count = function (s1) {
-         return (this.length - this.replaceAll(s1, '').length) / s1.length;
+      function readOpts() {
+         return {
+            splitHyphenated: document.getElementById("cbSplitHyphenatedWords").checked,
+            countSpaces:     document.getElementById("cbCountSpaces").checked,
+            countSpecial:    document.getElementById("cbCountSpecialCharacters").checked
+         };
       }
 
-      function getParagraph(txt, n) {
-         return (txt.split("\n\n")[n - 1]);
-      }
-
-      function getLine(txt, n) {
-         txt = txt.replaceAll("\n\n", "\n");
-         txt = txt.replaceAll("\n\n", "\n");
-         txt = txt.replaceAll("\n\n", "\n");
-         return (txt.split("\n")[n - 1]);
-      }
-      function getWord(txt, n) {
-         txt = txt.replaceAll("\n", " ");
-         //   txt = txt.replaceAll("'", " ");
-         txt = txt.replace(/[^a-z0-9- ]/gi, "");
-         if (document.InputForm.cbSplitHyphenatedWords.checked == true) {
-            txt = txt.replaceAll("-", " ");
-         }
-         txt = txt.replaceAll(" - ", " ");
-         txt = txt.replaceAll("  ", " ");
-         txt = txt.replaceAll("  ", " ");
-         txt = txt.replaceAll("  ", " ");
-         return (txt.trim().split(" ")[n - 1]);
-      }
-      function getLetter(txt, n) {
-         txt = txt.replaceAll("\n", "");
-         if (!document.InputForm.cbCountSpaces.checked) {
-            txt = txt.replaceAll(" ", "");
-         }
-         if (!document.InputForm.cbCountSpecialCharacters.checked) {
-            txt = txt.replace(/[^a-z0-9 ]/gi, ""); // Remove all but alphanumeric and spaces
-         }
-         if (n > txt.length) {
-            return (undefined);
-         }
-         else
-            return (txt.split("")[n - 1]);
-      }
-
-      function FindSeperator(str) {
-         if (str.indexOf(":") > 0)
-            return (":");
-         else if (str.indexOf(",") > 0)
-            return (",");
-         else if (str.indexOf(".") > 0)
-            return (".");
-         else if (str.indexOf("-") > 0)
-            return ("-");
-         else
-            return ("");
-      }
-
-      function GetPiece(key, n, seperator) {
-         x = key.split(seperator)[n - 1];
-         if (n == 1) {
-            x -= g_nFindDelta;
-         }
-         return (x);
-      }
-
-      function CreateTuple(tuple) {
-         var output = "";
-         for (let i = 0; i < tuple.length; i++) {
-            if (i != 0) { output += ":"; }
-            output += tuple[i].toString();
-         }
-         return (output);
-      }
-
-      function OnCreate() {
-         trackEvent("create", document.InputForm.ExtractionType.value.toString());
-         // Determine length of cipher wants
-         // Get text
-         // Set to all 1's
-         // Enumerate till undefined
-         // If found, store letter, quit if all letters are done
-         // Increase previous one, set rest to 0
-         // If no previous one, set to all 1.
-         g_nFindDelta = 0;
-
+      function DoAction(findDelta) {
+         var inputText       = document.InputForm.InputText.value;
          var extractionTypes = document.InputForm.ExtractionType.value;
-         if (extractionTypes == 0) { extractionTypes = "321"; } else { extractionTypes = extractionTypes.toString(); }
-
-         var extractionlength = extractionTypes.toString().length;
-         var akeys = Array.apply(null, Array(extractionlength)).map(function (x, i) { return 1; }); // Create array of all 1
-         var nPart = extractionlength - 1;
-         var outputText = "";
-         var nLetter = 0;
-
-         var sTuple;
-         var sValue;
-
-         var bookCipherText = document.InputForm.BookCipherKey.value;
-         var inputText = document.InputForm.InputText.value;
-         var hasreset = false;
-         var offsetcount = 0;
-
-         while (nLetter < bookCipherText.length) {
-            if (extractionTypes[extractionTypes.length - 1] == 2) {
-               sToFind = getWord(bookCipherText, nLetter + 1);
-               if (sToFind == undefined) break;
-            }
-            else {
-               sToFind = bookCipherText.charAt(nLetter);
-            }
-
-            if (sToFind.match(/^[0-9a-zA-Z]+$/)) {
-
-               sTuple = CreateTuple(akeys);
-
-               switch (parseInt(extractionTypes)) {
-                  case 3:
-                     sValue = GetCipherText(inputText, offsetcount + parseInt(sTuple), 1, ":");
-                     break;
-                  case 6:
-                     sValue = GetCipherText(inputText, offsetcount + parseInt(sTuple), 2, ":");
-                     break;
-                  case 7:
-                     sValue = GetCipherText(inputText, offsetcount + parseInt(sTuple), 4, ":");
-                     break;
-                  default:
-                     sValue = GetCipherText(inputText, sTuple, extractionTypes, ":");
-                     break
-               }
-
-
-               if (sValue == undefined) {
-                  while (akeys[nPart] == 1 && nPart > 0) {
-                     nPart -= 1;
-                  }
-                  if (nPart == 0) {
-                     if (hasreset) {
-                        hasreset = false;
-                        outputText += "### ";
-                        nLetter += 1;
-                     }
-                     else {
-                        //Restart
-                        akeys = Array.apply(null, Array(extractionlength)).map(function (x, i) { return 1; }); // Create array of all 1
-                        hasreset = true;
-                     }
-
-                  } else {
-                     // Increase previous index
-                     nPart -= 1;
-                     akeys[nPart] = akeys[nPart] + 1;
-                     for (let i = nPart + 1; i < extractionlength; i++) { akeys[i] = 1; }
-                  }
-                  nPart = extractionlength - 1;
-               } else {
-                  if (sValue.toLowerCase().trim() == sToFind.toLowerCase()) { // Found it
-                     hasreset = false;
-                     outputText += sTuple + " ";
-                     offsetcount += parseInt(sTuple);
-                     if (extractionTypes == 3 || extractionTypes == 6 || extractionTypes == 7) {
-                        akeys = Array.apply(null, Array(extractionlength)).map(function (x, i) { return 1; }); // Create array of all 1
-                     }
-                     nLetter += 1;
-                  } else {
-                     // Increase previous index
-                     akeys[nPart] = akeys[nPart] + 1;
-
-                  }
-               }
-            } else {
-               nLetter += 1;
-               outputText += sToFind;
-            }
-         }
-
-         document.OutputForm.OutputText.value = outputText;
-      }
-
-      function GetCipherText(inputText, sTuple, extractionType, seperator) {
-         try {
-            switch (parseInt(extractionType)) {
-               case 1:
-                  outputText = getLetter(inputText, parseInt(sTuple) - g_nFindDelta);
-                  break;
-               case 2:
-                  outputText = getWord(inputText, parseInt(sTuple) - g_nFindDelta);
-                  if (outputText != undefined) { outputText += " "; }
-                  break;
-               case 4:
-                  cipWord = getWord(inputText, parseInt(sTuple) - -g_nFindDelta);
-                  outputText = getLetter(cipWord, 1);
-                  break;
-               case 21:
-                  cipWord = getWord(inputText, GetPiece(sTuple, 1, seperator));
-                  outputText = getLetter(cipWord, GetPiece(sTuple, 2, seperator));
-                  break
-               case 31:
-                  cipLine = getLine(inputText, GetPiece(sTuple, 1, seperator));
-                  outputText = getLetter(cipLine, GetPiece(sTuple, 2, seperator));
-                  break
-               case 32:
-                  cipLine = getLine(inputText, GetPiece(sTuple, 1, seperator));
-                  outputText = getWord(cipLine, GetPiece(sTuple, 2, seperator));
-                  if (outputText != undefined) { outputText += " "; }
-                  break;
-               case 41:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  outputText = getLetter(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  break
-               case 42:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  outputText = getWord(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  if (outputText != undefined) { outputText += " "; }
-                  break;
-               case 321:
-                  cipLine = getLine(inputText, GetPiece(sTuple, 1, seperator));
-                  cipWord = getWord(cipLine, GetPiece(sTuple, 2, seperator));
-                  outputText = getLetter(cipWord, GetPiece(sTuple, 3, seperator));
-                  break;
-               case 421:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  cipWord = getWord(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  outputText = getLetter(cipWord, GetPiece(sTuple, 3, seperator));
-                  break;
-               case 431:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  cipLine = getLine(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  outputText = getLetter(cipLine, GetPiece(sTuple, 3, seperator));
-                  break;
-               case 432:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  cipLine = getLine(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  outputText = getWord(cipLine, GetPiece(sTuple, 3, seperator));
-                  if (outputText != undefined) { outputText += " "; }
-                  break;
-               case 4321:
-                  cipParagraph = getParagraph(inputText, GetPiece(sTuple, 1, seperator));
-                  cipLine = getLine(cipParagraph, GetPiece(sTuple, 2, seperator));
-                  cipWord = getWord(cipLine, GetPiece(sTuple, 3, seperator));
-                  outputText = getLetter(cipWord, GetPiece(sTuple, 4, seperator));
-                  break;
-            }
-         }
-
-         catch (err) {
-            outputText = undefined;
-         }
-         finally {
-
-         }
-         return (outputText);
+         var bookCipherKeys  = document.InputForm.BookCipherKey.value;
+         return runAction(inputText, extractionTypes, bookCipherKeys, readOpts(), findDelta || 0);
       }
 
       function OnAction() {
          trackEvent("action", document.InputForm.ExtractionType.value.toString());
-         DoAction();
+         document.OutputForm.OutputText.value = DoAction(0);
       }
-      function DoAction() {
-         g_nFindDelta = 0
-         document.OutputForm.OutputText.value = RunAction();
+
+      function OnCreate() {
+         trackEvent("create", document.InputForm.ExtractionType.value.toString());
+         var inputText       = document.InputForm.InputText.value;
+         var bookCipherText  = document.InputForm.BookCipherKey.value;
+         var extractionTypes = document.InputForm.ExtractionType.value;
+         document.OutputForm.OutputText.value =
+            createKeys(inputText, bookCipherText, extractionTypes, readOpts());
       }
 
       function OnFind() {
          trackEvent("find");
-         g_nFindDelta = 0;
-         sOutput = "";
-         for (i = -50; i < 50; i++) {
-            g_nFindDelta = i;
-            sOutput += RunAction() + "\n";
+         var sOutput = "";
+         for (var i = -50; i < 50; i++) {
+            sOutput += DoAction(i) + "\n";
          }
          document.OutputForm.OutputText.value = sOutput;
       }
@@ -288,10 +70,17 @@
          DoClear();
       }
 
+      function DoClear() {
+         document.InputForm.InputText.value = "";
+         document.InputForm.BookCipherKey.value = "";
+         document.OutputForm.OutputText.value = "";
+         document.InputForm.cbSplitHyphenatedWords.checked = false;
+         document.InputForm.cbCountSpecialCharacters.checked = false;
+         document.InputForm.cbCountSpaces.checked = false;
+      }
+
       function OnSample(n) {
-         var it;
-         var ck;
-         var ct;
+         var it, ck, ct;
          trackEvent("sample", n.toString());
          DoClear();
          switch (n) {
@@ -317,176 +106,102 @@
          document.InputForm.InputText.value = it;
          document.InputForm.BookCipherKey.value = ck;
          document.InputForm.ExtractionType.value = ct;
-         DoAction();
+         document.OutputForm.OutputText.value = DoAction(0);
       }
-
-      function DoClear() {
-         document.InputForm.InputText.value = "";
-         document.InputForm.BookCipherKey.value = "";
-         document.OutputForm.OutputText.value = "";
-         document.InputForm.cbSplitHyphenatedWords.checked = false;
-         document.InputForm.cbCountSpecialCharacters.checked = false;
-         document.InputForm.cbCountSpaces.checked = false;
-      }
-
-      function RunAction() {
-         var inputText = document.InputForm.InputText.value;
-         var extractionTypes = document.InputForm.ExtractionType.value;
-         var bookCipherKeys = document.InputForm.BookCipherKey.value;
-         var outputText = "";
-         var i;
-         var lines;
-         var offsetcount = 0;
-
-         lines = bookCipherKeys.split("\n");
-         for (n = 0; n < lines.length; n++) {
-            if (lines[n].length > 0) {
-               bookCipherKey = lines[n].trim().split(" ");
-               var seperator = FindSeperator(bookCipherKey[0]);
-
-               if (extractionTypes == 0) { // Auto detect
-                  if (seperator == "") {
-                     keypieces = bookCipherKey[0].length;
-                  } else {
-                     keypieces = bookCipherKey[0].count(seperator) + 1;
-                  }
-                  switch (keypieces) {
-                     case 1:
-                        extractionType = "1";
-                        break
-                     case 2:
-                        extractionType = "31";
-                        break
-                     case 3:
-                        extractionType = "321";
-                        break
-                     case 4:
-                        extractionType = "4321";
-                        break
-                  }
-               } else {
-                  extractionType = extractionTypes;
-               }
-
-               for (i = 0; i < bookCipherKey.length; i++) {
-                  cipWord = "";
-                  cipLine = "";
-                  cipParagraph = "";
-                  if (bookCipherKey[i] != "") {
-                     sTuple = bookCipherKey[i].trim();
-                     switch (parseInt(extractionType)) {
-                        case 3:
-                           offsetcount += parseInt(sTuple);
-                           sOutput = GetCipherText(inputText, offsetcount, 1, seperator);
-                           break;
-                        case 5:
-                           sOutput = GetCipherText(inputText, (offsetcount + 1).toString() + ":" + sTuple, 31, ":");
-                           offsetcount += 1;
-                           break;
-                        case 6:
-                           offsetcount += parseInt(sTuple);
-                           sOutput = GetCipherText(inputText, offsetcount, 2, seperator);
-                           break;
-                        case 7:
-                           offsetcount += parseInt(sTuple);
-                           sOutput = GetCipherText(inputText, offsetcount, 4, seperator);
-                           break;
-                        default:
-                           sOutput = GetCipherText(inputText, sTuple, extractionType, seperator);
-                           break;
-                     }
-
-                     if (sOutput == undefined) {
-                        outputText += " Err: " + bookCipherKey[i];
-                     }
-                     else
-                        outputText += sOutput;
-                  }
-               }
-            }
-            outputText += "\n";
-         }
-         return (outputText);
-      }
-
-
 
       function page_init() {
          HamburgerMenu_Init();
       }
    </script>
-
 </head>
-<body onload="page_init()">
-   <div id="OuterFrame" style="text-align: left; width: 100%; height: 574px;">
-      <!-- Top Navigation Menu -->
-      <div class="topnav">
-         <div style="border: 1px solid black; text-align: left; background-color: blue; color: white; width: 100%; height: 24px;" id="FrameHeader">
-            <big>Book Cipher</big>
-         </div>
-         <!-- Navigation links (hidden by default) -->
-         <div id="myLinks">
-         </div>
-         <!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
-         <a href="javascript:void(0);" class="icon" onclick="HamburgerMenu_Open()">
-            <i class="fa fa-bars"></i>
-         </a>
 
+<body class="nltm-page" onload="page_init()">
+
+   <!-- Top navigation / hamburger menu (DOM consumed by hamburgermenu.js) -->
+   <div class="topnav">
+      <div class="nltm-tool-header" id="FrameHeader">
+         <span class="nltm-tool-title">Book Cipher</span>
+         <span class="nltm-tool-sub">Now Listen To Me Geocacher</span>
+         <div class="nltm-header-right">
+            <span class="nltm-header-samples-label">Try a sample:</span>
+            <button type="button" class="nltm-header-sample" onclick="OnSample(1)">Sample 1</button>
+            <button type="button" class="nltm-header-sample" onclick="OnSample(2)">Sample 2</button>
+            <button type="button" class="nltm-header-sample" onclick="OnSample(3)">Sample 3</button>
+            <button type="button" class="nltm-header-sample" onclick="OnClear()">Clear</button>
+         </div>
       </div>
-      <form name="InputForm">
-         Enter the book text
-         <input name="btnClear" value="Clear" onclick="OnClear()" type="button">
-         <input name="btnSample3" value="Sample 3" onclick="OnSample(3)" type="button" style='float:right'>
-         <input name="btnSample2" value="Sample 2" onclick="OnSample(2)" type="button" style='float:right'>
-         <input name="btnSample1" value="Sample 1" onclick="OnSample(1)" type="button" style='float:right'>
-         <br>
-         <textarea id="InputText" rows=15 style='width: 100%; max-width: 100%; '>
-
-         </textarea><br />
-         <input type="checkbox" id="cbSplitHyphenatedWords" name="cbSplitHyphenatedWords"><label for="cbSplitHyphenatedWords">Split hypenated words</label>
-         <input type="checkbox" id="cbCountSpecialCharacters" name="cbCountSpecialCharacters"><label for="cbCountSpecialCharacters">Count Special Characters</label>
-         <input type="checkbox" id="cbCountSpaces" name="cbCountSpaces"><label for="cbCountSpaces">Count Spaces</label>
-         <br />
-         <br>
-         Book Cipher Key:<br>
-         <textarea id="BookCipherKey" rows=4 style='width: 100%; max-width: 100%;'>
-</textarea>
-         <br />
-
-         Extraction:
-         <select name="ExtractionType">
-            <option value=0 selected>Auto Detect</option>
-            <option value=1>Letter#</option>
-            <option value=3>Letter Offset#</option>
-            <option value=5>Seq. Sentence Letter#</option>
-            <option value=2>Word#</option>
-            <option value=4>Word#-First Letter (Beale)</option>
-            <option value=6>Word# Offset</option>
-            <option value=7>Word#-First Letter (Beale) Offset</option>
-            <option value=21>Word# + Letter#</option>
-            <option value=31>Line# + Letter#</option>
-            <option value=32>Line# + Word#</option>
-            <option value=41>Paragraph# + Letter#</option>
-            <option value=42>Paragraph# + Word#</option>
-            <option value=321>Line# + Word# + Letter#</option>
-            <option value=421>Paragraph# + Word# + Letter#</option>
-            <option value=431>Paragraph# + Line# + Letter#</option>
-            <option value=432>Paragraph# + Line# + Word#</option>
-            <option value=4321>Paragraph# + Line# + Word# + Letter#</option>
-         </select>
-
-
-         <input name="FormAction" value="Action" onclick="OnAction()" type="button">
-         <input name="FormAction" value="Create" onclick="OnCreate()" type="button">
-         <input name="FormAction" value="Find" onclick="OnFind()" type="button">
-      </form>
-      <form name="OutputForm">
-         <hr>
-         Output:<br>
-
-<textarea  readonly id="OutputText" rows=4 style='width: 90%; max-width: 98%;'></textarea>
-
-      </form>
+      <!-- Navigation links (hidden by default) -->
+      <div id="myLinks"></div>
+      <!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
+      <a href="javascript:void(0);" class="icon" onclick="HamburgerMenu_Open()">
+         <i class="fa fa-bars"></i>
+      </a>
    </div>
-<!-- outer frame -->
-</body></html>
+
+   <main class="bc-main">
+
+      <form name="InputForm">
+
+         <!-- ── Book text ───────────────────────────────────────── -->
+         <section class="nltm-card">
+            <h2 class="bc-heading">Book text</h2>
+            <p class="bc-help">Paste the larger text the cipher draws from, then enter the key below.</p>
+            <textarea id="InputText" class="nltm-input bc-textarea" rows="15"></textarea>
+
+            <div class="bc-controls">
+               <label class="nltm-check"><input type="checkbox" id="cbSplitHyphenatedWords" name="cbSplitHyphenatedWords"> Split hyphenated words</label>
+               <label class="nltm-check"><input type="checkbox" id="cbCountSpecialCharacters" name="cbCountSpecialCharacters"> Count special characters</label>
+               <label class="nltm-check"><input type="checkbox" id="cbCountSpaces" name="cbCountSpaces"> Count spaces</label>
+            </div>
+         </section>
+
+         <!-- ── Cipher key & extraction ─────────────────────────── -->
+         <section class="nltm-card">
+            <h2 class="bc-heading">Cipher key &amp; extraction</h2>
+            <textarea id="BookCipherKey" class="nltm-input bc-textarea" rows="4"></textarea>
+
+            <div class="bc-controls">
+               <label class="bc-field">
+                  <span>Extraction</span>
+                  <select name="ExtractionType" class="nltm-input bc-select">
+                     <option value=0 selected>Auto Detect</option>
+                     <option value=1>Letter#</option>
+                     <option value=3>Letter Offset#</option>
+                     <option value=5>Seq. Sentence Letter#</option>
+                     <option value=2>Word#</option>
+                     <option value=4>Word#-First Letter (Beale)</option>
+                     <option value=6>Word# Offset</option>
+                     <option value=7>Word#-First Letter (Beale) Offset</option>
+                     <option value=21>Word# + Letter#</option>
+                     <option value=31>Line# + Letter#</option>
+                     <option value=32>Line# + Word#</option>
+                     <option value=41>Paragraph# + Letter#</option>
+                     <option value=42>Paragraph# + Word#</option>
+                     <option value=321>Line# + Word# + Letter#</option>
+                     <option value=421>Paragraph# + Word# + Letter#</option>
+                     <option value=431>Paragraph# + Line# + Letter#</option>
+                     <option value=432>Paragraph# + Line# + Word#</option>
+                     <option value=4321>Paragraph# + Line# + Word# + Letter#</option>
+                  </select>
+               </label>
+            </div>
+
+            <div class="bc-actions">
+               <input name="FormAction" value="Action" onclick="OnAction()" type="button" class="nltm-button">
+               <input name="FormAction" value="Create" onclick="OnCreate()" type="button" class="nltm-button">
+               <input name="FormAction" value="Find" onclick="OnFind()" type="button" class="nltm-button">
+            </div>
+         </section>
+      </form>
+
+      <!-- ── Output ──────────────────────────────────────────────── -->
+      <form name="OutputForm">
+         <section class="nltm-card">
+            <h2 class="bc-heading">Output</h2>
+            <textarea readonly id="OutputText" class="nltm-input bc-textarea" rows="4"></textarea>
+         </section>
+      </form>
+
+   </main>
+</body>
+</html>

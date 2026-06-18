@@ -1,0 +1,90 @@
+/* ============================================================
+   Book Cipher — tool-specific layout on top of
+   ../Shared/theme.css. Shared chrome (gradient header, hamburger
+   nav, .nltm-check, .nltm-card, .nltm-button, .nltm-input) lives
+   in theme.css; this file only holds the layout unique to this
+   tool. Tokens only — no hardcoded colors/fonts.
+   ============================================================ */
+
+/* ---------- Main / cards ---------- */
+
+.bc-main {
+   /* Wide format: fill the viewport, side padding acts as gutters
+      (mirrors the shared .nltm-main.is-wide recipe). */
+   width: 100%;
+   box-sizing: border-box;
+   margin: 0 auto;
+   padding: var(--nltm-sp-6) var(--nltm-sp-5) var(--nltm-sp-8);
+   display: flex;
+   flex-direction: column;
+   gap: var(--nltm-sp-5);
+}
+
+.bc-main form {
+   display: flex;
+   flex-direction: column;
+   gap: var(--nltm-sp-5);
+}
+
+.bc-heading {
+   font-family: var(--nltm-font-display);
+   font-style: italic;
+   font-weight: 600;
+   font-size: var(--nltm-fs-4);
+   color: var(--nltm-primary-deep);
+   margin: 0 0 var(--nltm-sp-3);
+}
+
+.bc-help {
+   color: var(--nltm-muted);
+   font-size: var(--nltm-fs-2);
+   margin: var(--nltm-sp-3) 0 0;
+}
+
+/* ---------- Textareas ---------- */
+
+.bc-textarea {
+   width: 100%;
+   box-sizing: border-box;
+   font-family: var(--nltm-font-mono);
+   font-size: var(--nltm-fs-2);
+   resize: vertical;
+}
+
+/* ---------- Controls rows ---------- */
+
+.bc-controls {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: var(--nltm-sp-4);
+   margin-top: var(--nltm-sp-4);
+}
+
+.bc-field {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--nltm-sp-2);
+   font-size: var(--nltm-fs-2);
+   color: var(--nltm-ink);
+}
+.bc-field span {
+   font-family: var(--nltm-font-display);
+   font-style: italic;
+   color: var(--nltm-muted);
+}
+.bc-select { padding: var(--nltm-sp-1) var(--nltm-sp-2); }
+
+.bc-actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: var(--nltm-sp-3);
+   margin-top: var(--nltm-sp-4);
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 640px) {
+   .bc-main { padding: var(--nltm-sp-5) var(--nltm-sp-4) var(--nltm-sp-7); }
+   #FrameHeader.nltm-tool-header { flex-direction: column; gap: var(--nltm-sp-1); }
+}
